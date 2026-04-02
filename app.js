@@ -150,6 +150,12 @@ function renderProducts() {
 function addToCart(id, qty = 1) {
   const product = products.find((p) => p.id === id);
   const existing = cart.find((i) => i.id === id);
+  const currentInCart = existing ? existing.qty : 0;
+  const available = getStock(id);
+  if (currentInCart + qty > available) {
+    showToast(I18N.getLang() === 'en' ? `Only ${available} in stock!` : `الكمية المتوفرة ${available} فقط!`);
+    return;
+  }
   if (existing) {
     existing.qty += qty;
   } else {
@@ -170,12 +176,15 @@ function removeFromCart(id) {
 function changeQty(id, delta) {
   const item = cart.find((i) => i.id === id);
   if (!item) return;
-  item.qty += delta;
-  if (item.qty <= 0) removeFromCart(id);
-  else {
-    saveCart();
-    updateCartUI();
+  const newQty = item.qty + delta;
+  if (newQty <= 0) { removeFromCart(id); return; }
+  if (newQty > getStock(id)) {
+    showToast(I18N.getLang() === 'en' ? `Only ${getStock(id)} in stock!` : `الكمية المتوفرة ${getStock(id)} فقط!`);
+    return;
   }
+  item.qty = newQty;
+  saveCart();
+  updateCartUI();
 }
 
 function saveCart() {
@@ -486,6 +495,29 @@ document.getElementById("orderForm").addEventListener("submit", async (e) => {
 document.getElementById("checkoutBtn").addEventListener("click", () => {
   if (cart.length === 0) {
     showToast(I18N.t("toast.emptyCart"));
+    return;
+  }
+  const outOfStock = cart.filter((i) => getStock(i.id) === 0);
+  const overStock   = cart.filter((i) => getStock(i.id) > 0 && i.qty > getStock(i.id));
+  if (outOfStock.length > 0 || overStock.length > 0) {
+    const lang = I18N.getLang();
+    let msg = lang === 'en'
+      ? "Some items in your cart are no longer available:\n\n"
+      : "بعض المنتجات في سلتك لم تعد متوفرة:\n\n";
+    outOfStock.forEach((i) => {
+      msg += lang === 'en'
+        ? `• ${i.nameEn || i.name} — Out of stock\n`
+        : `• ${i.name} — نفد المخزون\n`;
+    });
+    overStock.forEach((i) => {
+      msg += lang === 'en'
+        ? `• ${i.nameEn || i.name} — Only ${getStock(i.id)} available\n`
+        : `• ${i.name} — المتوفر فقط ${getStock(i.id)}\n`;
+    });
+    msg += lang === 'en'
+      ? "\nPlease update your cart before placing the order."
+      : "\nيرجى تحديث السلة قبل إتمام الطلب.";
+    alert(msg);
     return;
   }
   openOrderModal();

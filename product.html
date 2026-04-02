@@ -187,12 +187,25 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
   <script src="products-data.js"></script>
   <script src="translations.js"></script>
   <script src="i18n.js"></script>
   <script>
+    // ── STOCK ─────────────────────────────────────────────
+    let stockCache = {};
+
+    async function loadStock() {
+      const { data, error } = await _supabase.from("stock").select("product_id, qty");
+      if (error) { products.forEach((p) => { stockCache[p.id] = p.stock ?? 0; }); return; }
+      data.forEach((row) => { stockCache[row.product_id] = row.qty; });
+      products.forEach((p) => { if (stockCache[p.id] === undefined) stockCache[p.id] = p.stock ?? 0; });
+    }
+
+    function getStock(id) { return stockCache[id] ?? 0; }
+
     // ── CART ─────────────────────────────────────────────
-    const SHIPPING = 25;
     let cart = JSON.parse(localStorage.getItem("abaq_cart") || "[]");
 
     function saveCart() { localStorage.setItem("abaq_cart", JSON.stringify(cart)); }
@@ -200,6 +213,16 @@
     function addToCart(id, qty = 1) {
       const product = products.find((p) => p.id === id);
       const existing = cart.find((i) => i.id === id);
+      const currentInCart = existing ? existing.qty : 0;
+      const available = getStock(id);
+      if (available === 0) {
+        showToast(I18N.t("product.outOfStock"));
+        return;
+      }
+      if (currentInCart + qty > available) {
+        showToast(I18N.getLang() === 'en' ? `Only ${available} in stock!` : `الكمية المتوفرة ${available} فقط!`);
+        return;
+      }
       if (existing) { existing.qty += qty; } else { cart.push({ ...product, qty }); }
       saveCart();
       updateCartUI();
@@ -212,9 +235,15 @@
     function changeQty(id, delta) {
       const item = cart.find((i) => i.id === id);
       if (!item) return;
-      item.qty += delta;
-      if (item.qty <= 0) removeFromCart(id);
-      else { saveCart(); updateCartUI(); }
+      const newQty = item.qty + delta;
+      if (newQty <= 0) { removeFromCart(id); return; }
+      if (newQty > getStock(id)) {
+        showToast(I18N.getLang() === 'en' ? `Only ${getStock(id)} in stock!` : `الكمية المتوفرة ${getStock(id)} فقط!`);
+        return;
+      }
+      item.qty = newQty;
+      saveCart();
+      updateCartUI();
     }
 
     function updateCartUI() {
@@ -310,6 +339,29 @@
 
     document.getElementById("checkoutBtn").addEventListener("click", () => {
       if (cart.length === 0) { showToast(I18N.t("toast.emptyCart")); return; }
+      const lang = I18N.getLang();
+      const outOfStock = cart.filter((i) => getStock(i.id) === 0);
+      const overStock  = cart.filter((i) => getStock(i.id) > 0 && i.qty > getStock(i.id));
+      if (outOfStock.length > 0 || overStock.length > 0) {
+        let msg = lang === 'en'
+          ? "Some items in your cart are no longer available:\n\n"
+          : "بعض المنتجات في سلتك لم تعد متوفرة:\n\n";
+        outOfStock.forEach((i) => {
+          msg += lang === 'en'
+            ? `• ${i.nameEn || i.name} — Out of stock\n`
+            : `• ${i.name} — نفد المخزون\n`;
+        });
+        overStock.forEach((i) => {
+          msg += lang === 'en'
+            ? `• ${i.nameEn || i.name} — Only ${getStock(i.id)} available\n`
+            : `• ${i.name} — المتوفر فقط ${getStock(i.id)}\n`;
+        });
+        msg += lang === 'en'
+          ? "\nPlease update your cart before placing the order."
+          : "\nيرجى تحديث السلة قبل إتمام الطلب.";
+        alert(msg);
+        return;
+      }
       openOrderModal();
     });
 
@@ -346,12 +398,16 @@
               <h1>${displayName}</h1>
               <div class="product-price">₪${product.price.toFixed(2)}</div>
               <div class="product-desc">${displayDesc}</div>
+              ${getStock(product.id) > 0 ? `
               <div class="product-qty-row">
                 <button class="qty-btn" id="detailMinus">−</button>
                 <span class="qty-val" id="detailQty">1</span>
                 <button class="qty-btn" id="detailPlus">+</button>
-              </div>
-              <button class="add-to-cart" id="detailAddCart">${I18N.t("product.addToCart")}</button>
+              </div>` : ''}
+              ${getStock(product.id) === 0
+                ? `<button class="add-to-cart" disabled style="opacity:.4;cursor:not-allowed;">${I18N.t("product.outOfStock")}</button>`
+                : `<button class="add-to-cart" id="detailAddCart">${I18N.t("product.addToCart")}</button>`
+              }
             </div>
           </div>`;
 
@@ -365,15 +421,17 @@
         });
 
         // Qty controls
-        document.getElementById("detailMinus").addEventListener("click", () => {
+        document.getElementById("detailMinus")?.addEventListener("click", () => {
           const el = document.getElementById("detailQty");
           if (Number(el.textContent) > 1) el.textContent = Number(el.textContent) - 1;
         });
-        document.getElementById("detailPlus").addEventListener("click", () => {
+        document.getElementById("detailPlus")?.addEventListener("click", () => {
           const el = document.getElementById("detailQty");
-          el.textContent = Number(el.textContent) + 1;
+          const stock = getStock(product.id);
+          if (Number(el.textContent) < stock) el.textContent = Number(el.textContent) + 1;
+          else showToast(I18N.getLang() === 'en' ? `Only ${stock} in stock!` : `الكمية المتوفرة ${stock} فقط!`);
         });
-        document.getElementById("detailAddCart").addEventListener("click", () => {
+        document.getElementById("detailAddCart")?.addEventListener("click", () => {
           const qty = Number(document.getElementById("detailQty").textContent);
           addToCart(product.id, qty);
           openCart();
@@ -381,9 +439,12 @@
       }
     }
 
-    I18N.init();
-    renderPage();
-    updateCartUI();
+    (async () => {
+      await loadStock();
+      I18N.init();
+      renderPage();
+      updateCartUI();
+    })();
   </script>
 </body>
 </html>
