@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>عبق</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <a class="logo" href="index.html"><img src="images/logo.jpeg" alt="Abaq" style="height:48px;width:48px;object-fit:cover;border-radius:50%;" /></a>
+      <nav>
+        <a href="index.html" data-i18n="nav.shop">المتجر</a>
+        <a href="about.html" data-i18n="nav.about">من نحن</a>
+      </nav>
+      <button id="langToggleBtn" class="lang-btn">EN</button>
+      <button class="cart-btn" id="cartBtn">
+        <span data-i18n="nav.cart">سلتي</span> <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-text">
+      <h1 data-i18n="hero.title">عبق، لأن كل تفصيلة تحكي قصة</h1>
+      <p><span data-i18n="hero.subtitle1">هدايا ملهمة: صندوق "كن أنت" و"لا تحزن"</span><br/><span data-i18n="hero.subtitle2">منتجات خزفية وخشبية تضيف لمسة راقية لمنزلك</span></p>
+      <a href="#products" class="btn-primary" data-i18n="hero.cta">تسوق الآن</a>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <main id="products">
+    <h2 class="section-title" data-i18n="products.title">منتجاتنا</h2>
+    <div class="product-grid" id="productGrid"></div>
+  </main>
+
+  <!-- ABOUT -->
+  <section class="about" id="about">
+    <h2 data-i18n="about.title">عن متجرنا</h2>
+    <p data-i18n="about.intro1">نُقدّم لكم تشكيلة مختارة من أجمل منتجات التراث والهدايا، تجمع بين الأصالة والذوق الرفيع.</p>
+    <p data-i18n="about.intro2">نحمل بين أيدينا منتجات يدوية تراثية فاخرة كالخزف وصناديق الموزاييك — غير أن ما يميّزنا ويجعلنا <strong>وجهتك الأولى للهدايا المعنوية</strong> هو منتجاننا الأصليون والحصريون:</p>
+    <div class="about-cards">
+      <div class="about-card">
+        <h3 data-i18n="about.beYourselfTitle">صندوق "كن أنت" — ابتكارنا الحصري</h3>
+        <p data-i18n="about.beYourselfDesc">صندوق هدية مُصمَّم بعناية لمن تريد أن تُذكّره بقيمته وتميّزه. يضم بداخله مجموعة منتقاة من المقتنيات الملهِمة التي تحمل رسالة واحدة: أنت كافٍ كما أنت.</p>
+      </div>
+      <div class="about-card">
+        <h3 data-i18n="about.dontGrieveTitle">صندوق "لا تحزن" — ابتكارنا الحصري</h3>
+        <p data-i18n="about.dontGrieveDesc">صندوق مصمَّم بأسلوب دافئ ومُطمئِن لمن يمرّ بلحظة صعبة، يحمل بداخله كلمات تُسكّن القلب وتُعيد الأمل. هدية تقول بلا كلام: أنا بجانبك.</p>
+      </div>
+    </div>
+    <p class="about-tagline" data-i18n="about.bottomTagline">كل صندوق منهما تصميم أصيل من إبداعنا، لا تجده في أي متجر آخر. نصنع الهدية التي تُحفظ، ولا تُنسى.</p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p data-i18n="footer.copy">© 2026 عبق. جميع الحقوق محفوظة.</p>
+  </footer>
+
+  <!-- CART SIDEBAR -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+      <h3 data-i18n="cart.title">سلة التسوق</h3>
+      <button class="close-btn" id="closeCart">&times;</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+      <div class="cart-total"><span data-i18n="cart.subtotal">المجموع الجزئي:</span> <strong id="cartSubtotal">₪0.00</strong></div>
+      <div class="cart-total"><span data-i18n="cart.shipping">الشحن:</span> <strong id="cartShipping" style="font-size:.85rem;color:#888;">يُحسب حسب المدينة</strong></div>
+      <div class="cart-total" style="font-size:1.15rem;border-top:1px solid #eee;padding-top:12px;margin-top:4px;"><span data-i18n="cart.total">الإجمالي:</span> <strong id="cartTotal">₪0.00</strong></div>
+      <button class="btn-primary checkout-btn" id="checkoutBtn" data-i18n="cart.checkout">إتمام الطلب</button>
+    </div>
+  </aside>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ORDER FORM MODAL -->
+  <div class="payment-overlay" id="orderOverlay"></div>
+  <div class="payment-modal" id="orderModal">
+    <div class="payment-modal-header">
+      <h3 data-i18n="order.title">تأكيد الطلب</h3>
+      <button class="close-btn" id="closeOrder">&times;</button>
+    </div>
+    <div class="payment-modal-body">
+      <div class="payment-total-line"><span data-i18n="order.total">المجموع:</span> <strong id="orderTotalDisplay">₪0.00</strong></div>
+      <form id="orderForm">
+        <div class="order-field">
+          <label data-i18n="order.name">الاسم الكامل</label>
+          <input type="text" id="customerName" data-i18n-ph="order.namePH" placeholder="ادخل اسمك" required />
+        </div>
+        <div class="order-field">
+          <label data-i18n="order.phone">رقم الهاتف</label>
+          <input type="tel" id="customerPhone" data-i18n-ph="order.phonePH" placeholder="05XXXXXXXX" required />
+        </div>
+        <!-- Delivery method -->
+        <div class="order-field">
+          <label data-i18n="order.deliveryLabel">طريقة الاستلام</label>
+          <div class="delivery-toggle">
+            <label class="delivery-option">
+              <input type="radio" name="deliveryMethod" value="delivery" id="methodDelivery" checked />
+              <span data-i18n="order.delivery">🚚 توصيل للمنزل</span>
+            </label>
+            <label class="delivery-option">
+              <input type="radio" name="deliveryMethod" value="pickup" id="methodPickup" />
+              <span data-i18n="order.pickup">🤝 استلام من الناصرة</span>
+            </label>
+          </div>
+        </div>
+        <!-- City (delivery only) -->
+        <div class="order-field" id="cityField">
+          <label data-i18n="order.city">المدينة</label>
+          <select id="customerCity">
+            <option value="">اختاري مدينتك...</option>
+          </select>
+          <div id="shippingEstimate" class="shipping-estimate"></div>
+        </div>
+        <!-- Street (delivery only) -->
+        <div class="order-field" id="streetField">
+          <label data-i18n="order.street">الشارع والعنوان التفصيلي</label>
+          <input type="text" id="customerAddress" data-i18n-ph="order.streetPH" placeholder="الشارع، رقم البيت" />
+        </div>
+        <!-- Pickup info -->
+        <div class="pickup-info" id="pickupInfo" style="display:none;">
+          <span data-i18n="order.pickupInfo">📍 سيتم التواصل معك لتحديد موعد الاستلام من الناصرة.</span>
+        </div>
+        <div class="order-field">
+          <label data-i18n="order.notes">ملاحظات (اختياري)</label>
+          <textarea id="customerNotes" data-i18n-ph="order.notesPH" placeholder="أي تفاصيل إضافية..." rows="2"></textarea>
+        </div>
+        <button class="btn-primary pay-btn" type="submit" data-i18n="order.submit">إرسال الطلب عبر واتساب</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script src="products-data.js"></script>
+  <script src="translations.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

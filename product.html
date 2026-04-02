@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>عبق</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .product-page {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 24px 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .product-gallery {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .gallery-main {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #eee;
+    }
+
+    .gallery-main img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity .2s;
+    }
+
+    .gallery-thumbs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .gallery-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color .2s;
+    }
+
+    .gallery-thumb.active { border-color: var(--accent); }
+
+    .gallery-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .product-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .back-link {
+      font-size: .9rem;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .product-detail h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    .product-detail .product-price {
+      font-size: 1.5rem;
+    }
+
+    .product-detail .product-desc {
+      font-size: .95rem;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .product-detail .product-qty-row {
+      margin-top: 4px;
+    }
+
+    .product-detail .add-to-cart {
+      margin-top: 4px;
+      padding: 14px;
+      font-size: 1rem;
+    }
+
+    .not-found {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 640px) {
+      .product-page {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        margin: 24px auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <a class="logo" href="index.html"><img src="images/logo.jpeg" alt="Abaq" style="height:48px;width:48px;object-fit:cover;border-radius:50%;" /></a>
+      <nav>
+        <a href="index.html" data-i18n="nav.shop">المتجر</a>
+        <a href="about.html" data-i18n="nav.about">من نحن</a>
+      </nav>
+      <button id="langToggleBtn" class="lang-btn">EN</button>
+      <button class="cart-btn" id="cartBtn">
+        <span data-i18n="nav.cart">سلتي</span> <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <div id="pageContent"></div>
+
+  <!-- CART SIDEBAR -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+      <h3 data-i18n="cart.title">سلة التسوق</h3>
+      <button class="close-btn" id="closeCart">&times;</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+      <div class="cart-total"><span data-i18n="cart.subtotal">المجموع الجزئي:</span> <strong id="cartSubtotal">₪0.00</strong></div>
+      <div class="cart-total"><span data-i18n="cart.shipping">الشحن:</span> <strong>₪25.00</strong></div>
+      <div class="cart-total" style="font-size:1.15rem;border-top:1px solid #eee;padding-top:12px;margin-top:4px;"><span data-i18n="cart.total">الإجمالي:</span> <strong id="cartTotal">₪0.00</strong></div>
+      <button class="btn-primary checkout-btn" id="checkoutBtn" data-i18n="cart.checkout">إتمام الطلب</button>
+    </div>
+  </aside>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ORDER FORM MODAL -->
+  <div class="payment-overlay" id="orderOverlay"></div>
+  <div class="payment-modal" id="orderModal">
+    <div class="payment-modal-header">
+      <h3 data-i18n="order.title">تأكيد الطلب</h3>
+      <button class="close-btn" id="closeOrder">&times;</button>
+    </div>
+    <div class="payment-modal-body">
+      <div class="payment-total-line"><span data-i18n="order.total">المجموع:</span> <strong id="orderTotalDisplay">₪0.00</strong></div>
+      <form id="orderForm">
+        <div class="order-field">
+          <label data-i18n="order.name">الاسم الكامل</label>
+          <input type="text" id="customerName" data-i18n-ph="order.namePH" placeholder="ادخل اسمك" required />
+        </div>
+        <div class="order-field">
+          <label data-i18n="order.phone">رقم الهاتف</label>
+          <input type="tel" id="customerPhone" data-i18n-ph="order.phonePH" placeholder="05XXXXXXXX" required />
+        </div>
+        <div class="order-field">
+          <label data-i18n="order.address">العنوان</label>
+          <input type="text" id="customerAddress" data-i18n-ph="order.addressPH" placeholder="المدينة، الشارع" required />
+        </div>
+        <div class="order-field">
+          <label data-i18n="order.notes">ملاحظات (اختياري)</label>
+          <textarea id="customerNotes" data-i18n-ph="order.notesPH" placeholder="أي تفاصيل إضافية..." rows="2"></textarea>
+        </div>
+        <button class="btn-primary pay-btn" type="submit" data-i18n="order.submit">إرسال الطلب عبر واتساب</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="products-data.js"></script>
+  <script src="translations.js"></script>
+  <script src="i18n.js"></script>
+  <script>
+    // ── CART ─────────────────────────────────────────────
+    const SHIPPING = 25;
+    let cart = JSON.parse(localStorage.getItem("abaq_cart") || "[]");
+
+    function saveCart() { localStorage.setItem("abaq_cart", JSON.stringify(cart)); }
+
+    function addToCart(id, qty = 1) {
+      const product = products.find((p) => p.id === id);
+      const existing = cart.find((i) => i.id === id);
+      if (existing) { existing.qty += qty; } else { cart.push({ ...product, qty }); }
+      saveCart();
+      updateCartUI();
+      const displayName = I18N.getLang() === 'en' ? (product.nameEn || product.name) : product.name;
+      showToast(I18N.t("toast.added", { name: displayName }));
+    }
+
+    function removeFromCart(id) { cart = cart.filter((i) => i.id !== id); saveCart(); updateCartUI(); }
+
+    function changeQty(id, delta) {
+      const item = cart.find((i) => i.id === id);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) removeFromCart(id);
+      else { saveCart(); updateCartUI(); }
+    }
+
+    function updateCartUI() {
+      const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
+      document.getElementById("cartCount").textContent = totalItems;
+      const itemsEl = document.getElementById("cartItems");
+      if (cart.length === 0) {
+        itemsEl.innerHTML = `<div class="empty-cart">${I18N.t("cart.empty")}</div>`;
+      } else {
+        itemsEl.innerHTML = cart.map((item) => `
+          <div class="cart-item">
+            <div class="cart-item-emoji">${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:2rem;height:2rem;object-fit:cover;border-radius:6px;" />` : item.emoji}</div>
+            <div class="cart-item-info">
+              <div class="cart-item-name">${I18N.getLang() === 'en' ? (item.nameEn || item.name) : item.name}</div>
+              <div class="cart-item-price">₪${(item.price * item.qty).toFixed(2)}</div>
+            </div>
+            <div class="cart-item-qty">
+              <button class="qty-btn" data-id="${item.id}" data-delta="-1">−</button>
+              <span class="qty-val">${item.qty}</span>
+              <button class="qty-btn" data-id="${item.id}" data-delta="1">+</button>
+            </div>
+          </div>`).join("");
+        itemsEl.querySelectorAll(".qty-btn").forEach((btn) => {
+          btn.addEventListener("click", () => changeQty(Number(btn.dataset.id), Number(btn.dataset.delta)));
+        });
+      }
+      const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+      const total = subtotal + (cart.length > 0 ? SHIPPING : 0);
+      document.getElementById("cartSubtotal").textContent = `₪${subtotal.toFixed(2)}`;
+      document.getElementById("cartTotal").textContent = `₪${total.toFixed(2)}`;
+    }
+
+    function openCart() {
+      document.getElementById("cartSidebar").classList.add("open");
+      document.getElementById("cartOverlay").classList.add("open");
+    }
+    function closeCart() {
+      document.getElementById("cartSidebar").classList.remove("open");
+      document.getElementById("cartOverlay").classList.remove("open");
+    }
+
+    document.getElementById("cartBtn").addEventListener("click", openCart);
+    document.getElementById("closeCart").addEventListener("click", closeCart);
+    document.getElementById("cartOverlay").addEventListener("click", closeCart);
+
+    // ── TOAST ─────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2500);
+    }
+
+    // ── ORDER MODAL ───────────────────────────────────────
+    const WHATSAPP_NUMBER = "972522838766";
+
+    function openOrderModal() {
+      const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+      const total = subtotal + SHIPPING;
+      document.getElementById("orderTotalDisplay").textContent = `₪${total.toFixed(2)}`;
+      document.getElementById("orderOverlay").classList.add("open");
+      document.getElementById("orderModal").classList.add("open");
+    }
+    function closeOrderModal() {
+      document.getElementById("orderOverlay").classList.remove("open");
+      document.getElementById("orderModal").classList.remove("open");
+      document.getElementById("orderForm").reset();
+    }
+
+    document.getElementById("closeOrder").addEventListener("click", closeOrderModal);
+    document.getElementById("orderOverlay").addEventListener("click", closeOrderModal);
+
+    document.getElementById("orderForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("customerName").value.trim();
+      const phone = document.getElementById("customerPhone").value.trim();
+      const address = document.getElementById("customerAddress").value.trim();
+      const notes = document.getElementById("customerNotes").value.trim();
+      const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+      const itemsList = cart.map((i) => `• ${i.name} x${i.qty} — ₪${(i.price * i.qty).toFixed(2)}`).join("\n");
+      const message =
+        `طلب جديد من متجر عبق 🛍️\n──────────────────\n` +
+        `👤 الاسم: ${name}\n📞 الهاتف: ${phone}\n📍 العنوان: ${address}\n` +
+        (notes ? `📝 ملاحظات: ${notes}\n` : "") +
+        `──────────────────\n${itemsList}\n──────────────────\n` +
+        `💰 المجموع: ₪${total.toFixed(2)}\nالدفع عند الاستلام`;
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank");
+      cart = []; saveCart(); updateCartUI(); closeOrderModal(); closeCart();
+      showToast(I18N.t("toast.orderSent"));
+    });
+
+    document.getElementById("checkoutBtn").addEventListener("click", () => {
+      if (cart.length === 0) { showToast(I18N.t("toast.emptyCart")); return; }
+      openOrderModal();
+    });
+
+    // ── RENDER PRODUCT PAGE ───────────────────────────────
+    function renderPage() {
+      const params = new URLSearchParams(window.location.search);
+      const id = Number(params.get("id"));
+      const product = products.find((p) => p.id === id);
+      const content = document.getElementById("pageContent");
+      const lang = I18N.getLang();
+
+      if (!product) {
+        content.innerHTML = `<div class="not-found"><h2>${I18N.t("product.notFound")}</h2><a href="index.html" class="btn-primary" style="margin-top:16px;display:inline-block;">${I18N.t("product.backToShop")}</a></div>`;
+      } else {
+        const displayName = lang === 'en' ? (product.nameEn || product.name) : product.name;
+        const displayDesc = lang === 'en' ? (product.descEn || product.desc) : product.desc;
+        document.title = `${displayName} — عبق`;
+        const thumbs = product.images.map((src, i) => `
+          <div class="gallery-thumb ${i === 0 ? 'active' : ''}" data-src="${src}">
+            <img src="${src}" alt="${displayName}" style="filter:${product.imgFilter || 'none'}" />
+          </div>`).join("");
+
+        content.innerHTML = `
+          <div class="product-page">
+            <div class="product-gallery">
+              <div class="gallery-main">
+                <img id="mainImg" src="${product.images[0]}" alt="${displayName}"
+                  style="object-position:${product.imgPosition || 'center'};filter:${product.imgFilter || 'none'};" />
+              </div>
+              ${product.images.length > 1 ? `<div class="gallery-thumbs">${thumbs}</div>` : ''}
+            </div>
+            <div class="product-detail">
+              <a href="index.html" class="back-link">← ${I18N.t("product.backToShop")}</a>
+              <h1>${displayName}</h1>
+              <div class="product-price">₪${product.price.toFixed(2)}</div>
+              <div class="product-desc">${displayDesc}</div>
+              <div class="product-qty-row">
+                <button class="qty-btn" id="detailMinus">−</button>
+                <span class="qty-val" id="detailQty">1</span>
+                <button class="qty-btn" id="detailPlus">+</button>
+              </div>
+              <button class="add-to-cart" id="detailAddCart">${I18N.t("product.addToCart")}</button>
+            </div>
+          </div>`;
+
+        // Thumbnail switching
+        document.querySelectorAll(".gallery-thumb").forEach((thumb) => {
+          thumb.addEventListener("click", () => {
+            document.getElementById("mainImg").src = thumb.dataset.src;
+            document.querySelectorAll(".gallery-thumb").forEach((t) => t.classList.remove("active"));
+            thumb.classList.add("active");
+          });
+        });
+
+        // Qty controls
+        document.getElementById("detailMinus").addEventListener("click", () => {
+          const el = document.getElementById("detailQty");
+          if (Number(el.textContent) > 1) el.textContent = Number(el.textContent) - 1;
+        });
+        document.getElementById("detailPlus").addEventListener("click", () => {
+          const el = document.getElementById("detailQty");
+          el.textContent = Number(el.textContent) + 1;
+        });
+        document.getElementById("detailAddCart").addEventListener("click", () => {
+          const qty = Number(document.getElementById("detailQty").textContent);
+          addToCart(product.id, qty);
+          openCart();
+        });
+      }
+    }
+
+    I18N.init();
+    renderPage();
+    updateCartUI();
+  </script>
+</body>
+</html>

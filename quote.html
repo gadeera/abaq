@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Abaq — Pricing Proposal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #fff;
+      color: #1a1a2e;
+      padding: 60px 72px;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid #1a1a2e;
+      padding-bottom: 24px;
+      margin-bottom: 36px;
+    }
+
+    .brand { font-size: 2.4rem; font-weight: 900; letter-spacing: -1px; color: #1a1a2e; }
+    .brand span { color: #e94560; }
+
+    .meta { text-align: right; font-size: .85rem; color: #666; line-height: 1.8; }
+    .meta strong { color: #1a1a2e; }
+
+    /* Title */
+    .doc-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
+    .doc-subtitle { font-size: .95rem; color: #666; margin-bottom: 40px; }
+
+    /* Section */
+    .section { margin-bottom: 36px; }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #e94560;
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 10px 16px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .price { font-weight: 700; color: #1a1a2e; white-space: nowrap; }
+    .highlight td { background: #fff0f3 !important; font-weight: 600; }
+
+    /* Note box */
+    .note {
+      background: #f5f5f7;
+      border-left: 4px solid #1a1a2e;
+      border-radius: 4px;
+      padding: 14px 18px;
+      font-size: .88rem;
+      color: #444;
+      line-height: 1.7;
+      margin-top: 12px;
+    }
+
+    /* Running costs */
+    .zero { color: #16a34a; font-weight: 700; }
+
+    /* Footer */
+    .footer {
+      margin-top: 56px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      font-size: .8rem;
+      color: #aaa;
+    }
+
+    /* Print */
+    @media print {
+      body { padding: 40px 56px; }
+      @page { margin: 0; size: A4; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="brand">ab<span>a</span>q</div>
+      <div style="font-size:.85rem;color:#666;margin-top:4px;">عبق — Online Store</div>
+    </div>
+    <div class="meta">
+      <strong>Pricing Proposal</strong><br/>
+      Date: April 2026<br/>
+      Prepared by: Gadeer Awaisy<br/>
+      Contact: gadeer.awaisy.1996@gmail.com
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <div class="doc-title">Website Sale & Maintenance Pricing</div>
+  <div class="doc-subtitle">This document outlines the pricing for purchasing the Abaq e-commerce website and optional ongoing maintenance services.</div>
+
+  <!-- ONE-TIME SALE -->
+  <div class="section">
+    <div class="section-title">One-Time Sale Price</div>
+    <table>
+      <thead>
+        <tr><th>Package</th><th>Includes</th><th>Price</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Files Only</td>
+          <td>All website source files handed over as-is</td>
+          <td class="price">$200 – $400</td>
+        </tr>
+        <tr>
+          <td>Standard Setup</td>
+          <td>Files + deployment on Netlify + Supabase database setup</td>
+          <td class="price">$400 – $700</td>
+        </tr>
+        <tr class="highlight">
+          <td>Full Setup</td>
+          <td>Everything above + custom domain configuration + handover session</td>
+          <td class="price">$500 – $900</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      💡 Recommended: <strong>Full Setup ($500–$900)</strong> — includes live deployment, database, domain, and a walkthrough so you can manage the store independently.
+    </div>
+  </div>
+
+  <!-- MAINTENANCE -->
+  <div class="section">
+    <div class="section-title">Monthly Maintenance Retainer</div>
+    <table>
+      <thead>
+        <tr><th>Plan</th><th>Services Included</th><th>Monthly Price</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Basic</td>
+          <td>Stock updates only (add/remove products, update quantities)</td>
+          <td class="price">$20 – $40</td>
+        </tr>
+        <tr>
+          <td>Standard</td>
+          <td>Stock updates + content changes (text, images, prices)</td>
+          <td class="price">$40 – $80</td>
+        </tr>
+        <tr class="highlight">
+          <td>Full Support</td>
+          <td>Everything above + bug fixes, new features, performance updates</td>
+          <td class="price">$80 – $150</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      📋 Maintenance contracts include a <strong>minimum 3-month commitment</strong>, response within 48 hours, and a clear scope of what counts as an extra feature (billed separately).
+    </div>
+  </div>
+
+  <!-- BUYER RUNNING COSTS -->
+  <div class="section">
+    <div class="section-title">Buyer's Ongoing Running Costs</div>
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Purpose</th><th>Cost</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Netlify</td>
+          <td>Website hosting</td>
+          <td class="price zero">Free</td>
+        </tr>
+        <tr>
+          <td>Supabase</td>
+          <td>Live stock database</td>
+          <td class="price zero">Free</td>
+        </tr>
+        <tr>
+          <td>Domain name (optional)</td>
+          <td>e.g. abaq.store / abaq.shop</td>
+          <td class="price">~$10–15 / year</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WHAT'S BUILT -->
+  <div class="section">
+    <div class="section-title">What's Included in the Website</div>
+    <div style="font-size:.9rem;color:#444;line-height:2;">
+      ✅ &nbsp;Fully responsive Arabic/English bilingual storefront<br/>
+      ✅ &nbsp;Product catalog with images, stock badges, and quantity controls<br/>
+      ✅ &nbsp;Live stock management via Supabase database<br/>
+      ✅ &nbsp;Shopping cart with per-city shipping calculator (49 cities)<br/>
+      ✅ &nbsp;Store pickup option (Nazareth)<br/>
+      ✅ &nbsp;WhatsApp order checkout with full order summary<br/>
+      ✅ &nbsp;Individual product detail pages<br/>
+      ✅ &nbsp;About page with brand story<br/>
+      ✅ &nbsp;Out-of-stock / low stock badges<br/>
+      ✅ &nbsp;No monthly platform fees — you own the code
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>Abaq — عبق &nbsp;|&nbsp; Nazareth, Israel</span>
+    <span>This proposal is valid for 30 days from the date above.</span>
+  </div>
+
+</body>
+</html>

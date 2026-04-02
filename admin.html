@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>إدارة المخزون — عبق</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #f5f5f7; }
+
+    .admin-wrap {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 24px 60px;
+    }
+
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .admin-header h1 { font-size: 1.6rem; font-weight: 800; }
+
+    .admin-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .admin-card img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .admin-card-info { flex: 1; }
+    .admin-card-name { font-weight: 700; font-size: .95rem; margin-bottom: 4px; }
+    .admin-card-stock { font-size: .85rem; color: var(--muted); }
+    .admin-card-stock span { font-weight: 700; }
+    .stock-zero { color: #e94560; }
+    .stock-low { color: #f59e0b; }
+    .stock-ok { color: #16a34a; }
+
+    .stock-controls { display: flex; align-items: center; gap: 8px; }
+
+    .stock-controls input {
+      width: 70px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: .95rem;
+      text-align: center;
+      direction: ltr;
+    }
+
+    .stock-controls button {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .stock-controls button:hover { opacity: .85; }
+
+    /* Login screen */
+    .login-screen {
+      max-width: 360px;
+      margin: 120px auto;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .login-screen h2 { margin-bottom: 24px; font-size: 1.4rem; }
+    .login-screen input {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 1rem;
+      margin-bottom: 16px;
+      text-align: center;
+      direction: ltr;
+      box-sizing: border-box;
+    }
+    .login-screen button { width: 100%; }
+    .login-error { color: #e94560; font-size: .85rem; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-screen">
+  <img src="images/logo.jpeg" alt="Abaq" style="width:72px;height:72px;object-fit:cover;border-radius:50%;margin-bottom:16px;" />
+  <h2>لوحة الإدارة</h2>
+  <input type="password" id="adminPass" placeholder="كلمة المرور" />
+  <button class="btn-primary" onclick="checkPassword()">دخول</button>
+  <div class="login-error" id="loginError"></div>
+</div>
+
+<div id="adminPanel" style="display:none;">
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <h1>إدارة المخزون</h1>
+      <a href="index.html" class="btn-primary" style="font-size:.85rem;padding:8px 16px;">العودة للمتجر</a>
+    </div>
+    <div id="stockList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="products-data.js"></script>
+<script>
+  // 🔑 Change this password
+  const ADMIN_PASSWORD = "abaq2026";
+
+  function checkPassword() {
+    const pass = document.getElementById("adminPass").value;
+    if (pass === ADMIN_PASSWORD) {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("adminPanel").style.display = "block";
+      renderStockList();
+    } else {
+      document.getElementById("loginError").textContent = "كلمة المرور غير صحيحة";
+    }
+  }
+
+  document.getElementById("adminPass").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") checkPassword();
+  });
+
+  function getStock(id) {
+    const overrides = JSON.parse(localStorage.getItem("abaq_stock") || "{}");
+    const product = products.find((p) => p.id === id);
+    return overrides[id] !== undefined ? overrides[id] : (product ? product.stock : 0);
+  }
+
+  function setStock(id, qty) {
+    const overrides = JSON.parse(localStorage.getItem("abaq_stock") || "{}");
+    overrides[id] = qty;
+    localStorage.setItem("abaq_stock", JSON.stringify(overrides));
+  }
+
+  function renderStockList() {
+    const list = document.getElementById("stockList");
+    list.innerHTML = products.map((p) => {
+      const stock = getStock(p.id);
+      const cls = stock === 0 ? "stock-zero" : stock <= 3 ? "stock-low" : "stock-ok";
+      const label = stock === 0 ? "نفد المخزون" : stock <= 3 ? `${stock} قطع متبقية` : `${stock} قطعة`;
+      return `
+        <div class="admin-card">
+          <img src="${p.image}" alt="${p.name}" style="filter:${p.imgFilter || 'none'}" />
+          <div class="admin-card-info">
+            <div class="admin-card-name">${p.name}</div>
+            <div class="admin-card-stock ${cls}" id="stockLabel-${p.id}"><span>${label}</span></div>
+          </div>
+          <div class="stock-controls">
+            <input type="number" id="stockInput-${p.id}" value="${stock}" min="0" />
+            <button onclick="updateStock(${p.id})">حفظ</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function updateStock(id) {
+    const input = document.getElementById(`stockInput-${id}`);
+    const qty = Math.max(0, parseInt(input.value) || 0);
+    setStock(id, qty);
+    renderStockList();
+    showToast("تم تحديث المخزون");
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 2500);
+  }
+</script>
+</body>
+</html>
