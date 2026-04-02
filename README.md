@@ -2,7 +2,7 @@
 
 A fully responsive bilingual (Arabic/English) e-commerce web application built from scratch, designed for selling handcrafted heritage products and meaningful gift boxes.
 
-🌐 **Live Site:** [your-netlify-url.netlify.app](https://your-netlify-url.netlify.app)
+🌐 **Live Site:** [abaq-store.net](https://abaq-store.net/)
 
 ---
 
