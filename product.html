@@ -103,6 +103,55 @@
       font-size: 1rem;
     }
 
+    .variant-toggle {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .variant-option {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 18px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      cursor: pointer;
+      flex: 1;
+      min-width: 130px;
+      transition: border-color .2s, background .2s;
+    }
+    .variant-option.selected {
+      border-color: var(--accent);
+      background: #fff0f3;
+    }
+    .variant-option input { display: none; }
+    .variant-label { font-weight: 700; font-size: .95rem; color: var(--text); }
+    .variant-price { font-size: 1.1rem; font-weight: 800; color: var(--accent); }
+
+    .package-contents {
+      background: var(--light);
+      border-radius: 10px;
+      padding: 16px 20px;
+    }
+    .contents-title {
+      font-weight: 700;
+      font-size: .95rem;
+      margin-bottom: 10px;
+      color: var(--brand);
+    }
+    .contents-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .contents-list li {
+      font-size: .9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
     .not-found {
       text-align: center;
       padding: 80px 24px;
@@ -384,6 +433,29 @@
             <img src="${src}" alt="${displayName}" style="filter:${product.imgFilter || 'none'}" />
           </div>`).join("");
 
+        const inStock = getStock(product.id) > 0;
+        const hasVariants = product.variants && product.variants.length > 0;
+        const defaultPrice = hasVariants ? product.variants[1].price : product.price;
+
+        const variantsHTML = hasVariants ? `
+          <div class="variant-toggle">
+            ${product.variants.map((v, i) => `
+              <label class="variant-option ${i === 1 ? 'selected' : ''}">
+                <input type="radio" name="variant" value="${i}" ${i === 1 ? 'checked' : ''} />
+                <span class="variant-label">${lang === 'en' ? v.labelEn : v.label}</span>
+                <span class="variant-price">₪${v.price}</span>
+              </label>`).join("")}
+          </div>` : '';
+
+        const contentsArr = lang === 'en' ? product.contentsEn : product.contents;
+        const contentsHTML = contentsArr && contentsArr.length ? `
+          <div class="package-contents">
+            <div class="contents-title">🎁 ${lang === 'en' ? 'Package Contents:' : 'محتويات الصندوق:'}</div>
+            <ul class="contents-list">
+              ${contentsArr.map((c) => `<li>✔ ${c}</li>`).join("")}
+            </ul>
+          </div>` : '';
+
         content.innerHTML = `
           <div class="product-page">
             <div class="product-gallery">
@@ -396,18 +468,18 @@
             <div class="product-detail">
               <a href="index.html" class="back-link">← ${I18N.t("product.backToShop")}</a>
               <h1>${displayName}</h1>
-              <div class="product-price">₪${product.price.toFixed(2)}</div>
+              <div class="product-price" id="detailPrice">₪${defaultPrice.toFixed(2)}</div>
               <div class="product-desc">${displayDesc}</div>
-              ${getStock(product.id) > 0 ? `
+              ${variantsHTML}
+              ${contentsHTML}
+              ${inStock ? `
               <div class="product-qty-row">
                 <button class="qty-btn" id="detailMinus">−</button>
                 <span class="qty-val" id="detailQty">1</span>
                 <button class="qty-btn" id="detailPlus">+</button>
-              </div>` : ''}
-              ${getStock(product.id) === 0
-                ? `<button class="add-to-cart" disabled style="opacity:.4;cursor:not-allowed;">${I18N.t("product.outOfStock")}</button>`
-                : `<button class="add-to-cart" id="detailAddCart">${I18N.t("product.addToCart")}</button>`
-              }
+              </div>
+              <button class="add-to-cart" id="detailAddCart">${I18N.t("product.addToCart")}</button>`
+              : `<button class="add-to-cart" disabled style="opacity:.4;cursor:not-allowed;">${I18N.t("product.outOfStock")}</button>`}
             </div>
           </div>`;
 
@@ -417,6 +489,18 @@
             document.getElementById("mainImg").src = thumb.dataset.src;
             document.querySelectorAll(".gallery-thumb").forEach((t) => t.classList.remove("active"));
             thumb.classList.add("active");
+          });
+        });
+
+        // Variant selection
+        let selectedVariantIndex = hasVariants ? 1 : null;
+        document.querySelectorAll("input[name='variant']").forEach((radio) => {
+          radio.addEventListener("change", () => {
+            selectedVariantIndex = Number(radio.value);
+            const v = product.variants[selectedVariantIndex];
+            document.getElementById("detailPrice").textContent = `₪${v.price.toFixed(2)}`;
+            document.querySelectorAll(".variant-option").forEach((el) => el.classList.remove("selected"));
+            radio.closest(".variant-option").classList.add("selected");
           });
         });
 
@@ -431,10 +515,36 @@
           if (Number(el.textContent) < stock) el.textContent = Number(el.textContent) + 1;
           else showToast(I18N.getLang() === 'en' ? `Only ${stock} in stock!` : `الكمية المتوفرة ${stock} فقط!`);
         });
+
         document.getElementById("detailAddCart")?.addEventListener("click", () => {
           const qty = Number(document.getElementById("detailQty").textContent);
-          addToCart(product.id, qty);
-          openCart();
+          if (hasVariants && selectedVariantIndex !== null) {
+            const v = product.variants[selectedVariantIndex];
+            const variantProduct = {
+              ...product,
+              id: product.id,
+              // store variant info in cart item
+              name: `${product.name} — ${v.label}`,
+              nameEn: `${product.nameEn} — ${v.labelEn}`,
+              price: v.price,
+              variantKey: v.key,
+            };
+            const existing = cart.find((i) => i.id === product.id && i.variantKey === v.key);
+            const currentInCart = existing ? existing.qty : 0;
+            const available = getStock(product.id);
+            if (currentInCart + qty > available) {
+              showToast(lang === 'en' ? `Only ${available} in stock!` : `الكمية المتوفرة ${available} فقط!`);
+              return;
+            }
+            if (existing) { existing.qty += qty; } else { cart.push({ ...variantProduct, qty }); }
+            saveCart();
+            updateCartUI();
+            showToast(I18N.t("toast.added", { name: lang === 'en' ? variantProduct.nameEn : variantProduct.name }));
+            openCart();
+          } else {
+            addToCart(product.id, qty);
+            openCart();
+          }
         });
       }
     }

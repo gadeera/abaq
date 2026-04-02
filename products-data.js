@@ -29,6 +29,20 @@ const products = [
       "images/dont-grieve-box/WhatsApp Image 2026-04-02 at 14.47.59.jpeg",
       "images/dont-grieve-box/WhatsApp Image 2026-04-02 at 14.48.00.jpeg",
     ],
+    variants: [
+      { key: "box",     label: "الصندوق فقط",      labelEn: "Box Only",      price: 100 },
+      { key: "package", label: "الباقة الكاملة",    labelEn: "Full Package",  price: 170 },
+    ],
+    contents: [
+      "بطاقات تحفيزية لكلمات تُضيء يومك",
+      "كوب زجاجي مزين بالزهور المجففة ليضيف لمسة جمال لأوقاتك",
+      "إكسسوارات خشبية محفورة بعبارات مميزة",
+    ],
+    contentsEn: [
+      "Motivational cards with words that brighten your day",
+      "A glass cup decorated with dried flowers to add beauty to your moments",
+      "Wooden accessories engraved with special phrases",
+    ],
   },
   {
     id: 3,
@@ -39,9 +53,25 @@ const products = [
     price: 120,
     stock: 20,
     emoji: "☕",
-    image: "images/be-yourself-box.jpeg",
+    image: "images/beyourself-box .jpeg",
+    variants: [
+      { key: "box",     label: "الصندوق فقط",      labelEn: "Box Only",      price: 70  },
+      { key: "package", label: "الباقة الكاملة",    labelEn: "Full Package",  price: 120 },
+    ],
+    contents: [
+      "بطاقات تحفيزية تساعدك على تحقيق أهدافك بثقة",
+      "شموع برائحة دافئة لإضافة لمسة من الاسترخاء والراحة",
+      "ملصقات مميزة لتزيين يومياتك برسائل إيجابية",
+      "تعليقة مميزة للسيارة",
+    ],
+    contentsEn: [
+      "Motivational cards to help you achieve your goals with confidence",
+      "Warm scented candles to add a touch of relaxation and comfort",
+      "Special stickers to decorate your daily life with positive messages",
+      "A unique car hanging accessory",
+    ],
     images: [
-      "images/be-yourself-box.jpeg",
+      "images/beyourself-box .jpeg",
       "images/be-yourself-box/WhatsApp Image 2026-04-02 at 14.46.43.jpeg",
       "images/be-yourself-box/WhatsApp Image 2026-04-02 at 14.46.44.jpeg",
       "images/be-yourself-box/WhatsApp Image 2026-04-02 at 14.46.45.jpeg",
