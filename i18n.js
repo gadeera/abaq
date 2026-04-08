@@ -31,9 +31,10 @@ const I18N = (() => {
     if (typeof updateCartUI  === "function") updateCartUI();
   }
 
-  function toggle() {
+  async function toggle() {
     lang = lang === "ar" ? "en" : "ar";
     localStorage.setItem("abaq_lang", lang);
+    if (typeof loadStock === "function") await loadStock();
     apply();
     const btn = document.getElementById("langToggleBtn");
     if (btn) btn.textContent = lang === "ar" ? "EN" : "ع";

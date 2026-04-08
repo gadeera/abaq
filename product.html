@@ -196,7 +196,7 @@
     <div class="cart-items" id="cartItems"></div>
     <div class="cart-footer">
       <div class="cart-total"><span data-i18n="cart.subtotal">المجموع الجزئي:</span> <strong id="cartSubtotal">₪0.00</strong></div>
-      <div class="cart-total"><span data-i18n="cart.shipping">الشحن:</span> <strong>₪25.00</strong></div>
+      <div class="cart-total"><span data-i18n="cart.shipping">الشحن:</span> <strong id="cartShipping" style="font-size:.85rem;color:#888;">يُحسب حسب المدينة</strong></div>
       <div class="cart-total" style="font-size:1.15rem;border-top:1px solid #eee;padding-top:12px;margin-top:4px;"><span data-i18n="cart.total">الإجمالي:</span> <strong id="cartTotal">₪0.00</strong></div>
       <button class="btn-primary checkout-btn" id="checkoutBtn" data-i18n="cart.checkout">إتمام الطلب</button>
     </div>
@@ -223,9 +223,36 @@
           <label data-i18n="order.phone">رقم الهاتف</label>
           <input type="tel" id="customerPhone" data-i18n-ph="order.phonePH" placeholder="05XXXXXXXX" required />
         </div>
+        <!-- Delivery method -->
         <div class="order-field">
-          <label data-i18n="order.address">العنوان</label>
-          <input type="text" id="customerAddress" data-i18n-ph="order.addressPH" placeholder="المدينة، الشارع" required />
+          <label data-i18n="order.deliveryLabel">طريقة الاستلام</label>
+          <div class="delivery-toggle">
+            <label class="delivery-option">
+              <input type="radio" name="deliveryMethod" value="delivery" id="methodDelivery" checked />
+              <span data-i18n="order.delivery">🚚 توصيل للمنزل</span>
+            </label>
+            <label class="delivery-option">
+              <input type="radio" name="deliveryMethod" value="pickup" id="methodPickup" />
+              <span data-i18n="order.pickup">🤝 استلام من الناصرة</span>
+            </label>
+          </div>
+        </div>
+        <!-- City (delivery only) -->
+        <div class="order-field" id="cityField">
+          <label data-i18n="order.city">المدينة</label>
+          <select id="customerCity">
+            <option value="">اختاري مدينتك...</option>
+          </select>
+          <div id="shippingEstimate" class="shipping-estimate"></div>
+        </div>
+        <!-- Street (delivery only) -->
+        <div class="order-field" id="streetField">
+          <label data-i18n="order.street">الشارع والعنوان التفصيلي</label>
+          <input type="text" id="customerAddress" data-i18n-ph="order.streetPH" placeholder="الشارع، رقم البيت" />
+        </div>
+        <!-- Pickup info -->
+        <div class="pickup-info" id="pickupInfo" style="display:none;">
+          <span data-i18n="order.pickupInfo">📍 سيتم التواصل معك لتحديد موعد الاستلام من الناصرة.</span>
         </div>
         <div class="order-field">
           <label data-i18n="order.notes">ملاحظات (اختياري)</label>
@@ -239,6 +266,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-client.js"></script>
   <script src="products-data.js"></script>
+  <script src="shipping-data.js"></script>
   <script src="translations.js"></script>
   <script src="i18n.js"></script>
   <script>
@@ -253,6 +281,12 @@
     }
 
     function getStock(id) { return stockCache[id] ?? 0; }
+
+    async function deductStock(id, qty) {
+      const newQty = Math.max(0, getStock(id) - qty);
+      stockCache[id] = newQty;
+      await _supabase.from("stock").update({ qty: newQty }).eq("product_id", id);
+    }
 
     // ── CART ─────────────────────────────────────────────
     let cart = JSON.parse(localStorage.getItem("abaq_cart") || "[]");
@@ -279,15 +313,21 @@
       showToast(I18N.t("toast.added", { name: displayName }));
     }
 
-    function removeFromCart(id) { cart = cart.filter((i) => i.id !== id); saveCart(); updateCartUI(); }
+    function removeFromCart(id) {
+      cart = cart.filter((i) => String(i.id) !== String(id));
+      saveCart(); updateCartUI();
+    }
 
     function changeQty(id, delta) {
-      const item = cart.find((i) => i.id === id);
+      const item = cart.find((i) => String(i.id) === String(id));
       if (!item) return;
       const newQty = item.qty + delta;
       if (newQty <= 0) { removeFromCart(id); return; }
-      if (newQty > getStock(id)) {
-        showToast(I18N.getLang() === 'en' ? `Only ${getStock(id)} in stock!` : `الكمية المتوفرة ${getStock(id)} فقط!`);
+      const rawId = item.productId != null ? item.productId : item.id;
+      const stockId = !isNaN(Number(rawId)) ? Number(rawId) : Number(String(rawId).split("_")[0]);
+      const available = getStock(stockId);
+      if (available > 0 && newQty > available) {
+        showToast(I18N.getLang() === 'en' ? `Only ${available} in stock!` : `الكمية المتوفرة ${available} فقط!`);
         return;
       }
       item.qty = newQty;
@@ -296,33 +336,42 @@
     }
 
     function updateCartUI() {
-      const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
-      document.getElementById("cartCount").textContent = totalItems;
+      document.getElementById("cartCount").textContent = cart.length;
       const itemsEl = document.getElementById("cartItems");
       if (cart.length === 0) {
         itemsEl.innerHTML = `<div class="empty-cart">${I18N.t("cart.empty")}</div>`;
       } else {
-        itemsEl.innerHTML = cart.map((item) => `
+        itemsEl.innerHTML = cart.map((item) => {
+          const fullName = I18N.getLang() === 'en' ? (item.nameEn || item.name) : item.name;
+          const parts = fullName.split(' — ');
+          const nameHtml = parts.length > 1
+            ? `${parts[0]}<br/><span style="color:var(--muted);font-size:.78rem;">${parts[1]}</span>`
+            : fullName;
+          return `
           <div class="cart-item">
-            <div class="cart-item-emoji">${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:2rem;height:2rem;object-fit:cover;border-radius:6px;" />` : item.emoji}</div>
+            <div class="cart-item-emoji">${item.image ? `<img src="${item.image}" alt="" style="width:2.4rem;height:2.4rem;object-fit:cover;border-radius:6px;" />` : item.emoji}</div>
             <div class="cart-item-info">
-              <div class="cart-item-name">${I18N.getLang() === 'en' ? (item.nameEn || item.name) : item.name}</div>
-              <div class="cart-item-price">₪${(item.price * item.qty).toFixed(2)}</div>
+              <div class="cart-item-name" style="font-size:.85rem;line-height:1.4;">${nameHtml}</div>
+              <div class="cart-item-price">₪${(Number(item.price) * Number(item.qty)).toFixed(2)}</div>
             </div>
             <div class="cart-item-qty">
               <button class="qty-btn" data-id="${item.id}" data-delta="-1">−</button>
               <span class="qty-val">${item.qty}</span>
               <button class="qty-btn" data-id="${item.id}" data-delta="1">+</button>
+              <button class="remove-item-btn" data-id="${item.id}">🗑</button>
             </div>
-          </div>`).join("");
+          </div>`;
+        }).join("");
         itemsEl.querySelectorAll(".qty-btn").forEach((btn) => {
-          btn.addEventListener("click", () => changeQty(Number(btn.dataset.id), Number(btn.dataset.delta)));
+          btn.addEventListener("click", () => changeQty(btn.dataset.id, Number(btn.dataset.delta)));
+        });
+        itemsEl.querySelectorAll(".remove-item-btn").forEach((btn) => {
+          btn.addEventListener("click", () => removeFromCart(btn.dataset.id));
         });
       }
-      const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-      const total = subtotal + (cart.length > 0 ? SHIPPING : 0);
+      const subtotal = cart.reduce((sum, i) => sum + Number(i.price) * Number(i.qty), 0);
       document.getElementById("cartSubtotal").textContent = `₪${subtotal.toFixed(2)}`;
-      document.getElementById("cartTotal").textContent = `₪${total.toFixed(2)}`;
+      document.getElementById("cartTotal").textContent = `₪${subtotal.toFixed(2)}`;
     }
 
     function openCart() {
@@ -351,13 +400,56 @@
     // ── ORDER MODAL ───────────────────────────────────────
     const WHATSAPP_NUMBER = "972522838766";
 
+    function populateCitySelect() {
+      const sel = document.getElementById("customerCity");
+      const lang = I18N.getLang();
+      sel.innerHTML = `<option value="">${I18N.t("order.cityPH")}</option>`;
+      CITIES_FROM_NAZARETH.forEach((c) => {
+        const opt = document.createElement("option");
+        opt.value = c.km;
+        opt.textContent = lang === "en" ? c.en : c.ar;
+        sel.appendChild(opt);
+      });
+    }
+
+    function updateOrderTotal() {
+      const isPickup = document.getElementById("methodPickup").checked;
+      const subtotal = cart.reduce((s, i) => s + Number(i.price) * Number(i.qty), 0);
+      const citySelect = document.getElementById("customerCity");
+      const citySelected = !isPickup && citySelect.value !== "";
+      const cityKm = citySelected ? Number(citySelect.value) : null;
+      const shipping = isPickup ? 0 : (citySelected ? getShippingFee(cityKm) : 0);
+      document.getElementById("orderTotalDisplay").textContent = `₪${(subtotal + shipping).toFixed(2)}`;
+      const estimateEl = document.getElementById("shippingEstimate");
+      if (isPickup) {
+        estimateEl.textContent = `🏪 ${I18N.getLang() === 'en' ? 'Pickup: Free' : 'الاستلام: مجاني'}`;
+        estimateEl.style.display = "block";
+      } else if (citySelected) {
+        estimateEl.textContent = `🚚 ${I18N.t("order.shippingFee").replace("{fee}", shipping)}`;
+        estimateEl.style.display = "block";
+      } else {
+        estimateEl.textContent = `📍 ${I18N.getLang() === 'en' ? 'Select a city to calculate shipping' : 'اختر مدينة لحساب الشحن'}`;
+        estimateEl.style.display = "block";
+      }
+    }
+
+    function setDeliveryMode(isPickup) {
+      document.getElementById("cityField").style.display   = isPickup ? "none" : "flex";
+      document.getElementById("streetField").style.display = isPickup ? "none" : "flex";
+      document.getElementById("pickupInfo").style.display  = isPickup ? "block" : "none";
+      document.getElementById("customerCity").required    = !isPickup;
+      document.getElementById("customerAddress").required = !isPickup;
+      updateOrderTotal();
+    }
+
     function openOrderModal() {
-      const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-      const total = subtotal + SHIPPING;
-      document.getElementById("orderTotalDisplay").textContent = `₪${total.toFixed(2)}`;
+      populateCitySelect();
+      document.getElementById("methodDelivery").checked = true;
+      setDeliveryMode(false);
       document.getElementById("orderOverlay").classList.add("open");
       document.getElementById("orderModal").classList.add("open");
     }
+
     function closeOrderModal() {
       document.getElementById("orderOverlay").classList.remove("open");
       document.getElementById("orderModal").classList.remove("open");
@@ -366,22 +458,44 @@
 
     document.getElementById("closeOrder").addEventListener("click", closeOrderModal);
     document.getElementById("orderOverlay").addEventListener("click", closeOrderModal);
+    document.getElementById("methodDelivery").addEventListener("change", () => setDeliveryMode(false));
+    document.getElementById("methodPickup").addEventListener("change",   () => setDeliveryMode(true));
+    document.getElementById("customerCity").addEventListener("change", updateOrderTotal);
 
-    document.getElementById("orderForm").addEventListener("submit", (e) => {
+    document.getElementById("orderForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const name = document.getElementById("customerName").value.trim();
-      const phone = document.getElementById("customerPhone").value.trim();
-      const address = document.getElementById("customerAddress").value.trim();
-      const notes = document.getElementById("customerNotes").value.trim();
-      const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-      const itemsList = cart.map((i) => `• ${i.name} x${i.qty} — ₪${(i.price * i.qty).toFixed(2)}`).join("\n");
+      const name     = document.getElementById("customerName").value.trim();
+      const phone    = document.getElementById("customerPhone").value.trim();
+      const notes    = document.getElementById("customerNotes").value.trim();
+      const isPickup = document.getElementById("methodPickup").checked;
+      const subtotal = cart.reduce((s, i) => s + Number(i.price) * Number(i.qty), 0);
+      let shippingFee = 0, locationLine = "";
+      if (isPickup) {
+        locationLine = `📍 الاستلام: من المتجر في الناصرة`;
+      } else {
+        const citySel  = document.getElementById("customerCity");
+        const cityKm   = citySel.value !== "" ? Number(citySel.value) : 0;
+        const cityName = citySel.selectedOptions[0]?.text || "";
+        const address  = document.getElementById("customerAddress").value.trim();
+        shippingFee    = citySel.value !== "" ? getShippingFee(cityKm) : 0;
+        locationLine   = `📍 المدينة: ${cityName}\n🏠 العنوان: ${address}`;
+      }
+      const total = subtotal + shippingFee;
+      const itemsList = cart.map((i) => `• ${i.name} x${Number(i.qty)} — ₪${(Number(i.price) * Number(i.qty)).toFixed(2)}`).join("\n");
       const message =
         `طلب جديد من متجر عبق 🛍️\n──────────────────\n` +
-        `👤 الاسم: ${name}\n📞 الهاتف: ${phone}\n📍 العنوان: ${address}\n` +
+        `👤 الاسم: ${name}\n📞 الهاتف: ${phone}\n${locationLine}\n` +
         (notes ? `📝 ملاحظات: ${notes}\n` : "") +
         `──────────────────\n${itemsList}\n──────────────────\n` +
-        `💰 المجموع: ₪${total.toFixed(2)}\nالدفع عند الاستلام`;
+        `🛒 المجموع الجزئي: ₪${subtotal.toFixed(2)}\n` +
+        (isPickup ? `🏪 الاستلام: مجاني\n` : `🚚 الشحن: ₪${shippingFee.toFixed(2)}\n`) +
+        `💰 الإجمالي: ₪${total.toFixed(2)}\nالدفع عند الاستلام`;
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank");
+      for (const item of cart) {
+        const rawId = item.productId != null ? item.productId : item.id;
+      const stockId = !isNaN(Number(rawId)) ? Number(rawId) : Number(String(rawId).split("_")[0]);
+        await deductStock(stockId, item.qty);
+      }
       cart = []; saveCart(); updateCartUI(); closeOrderModal(); closeCart();
       showToast(I18N.t("toast.orderSent"));
     });
@@ -389,8 +503,14 @@
     document.getElementById("checkoutBtn").addEventListener("click", () => {
       if (cart.length === 0) { showToast(I18N.t("toast.emptyCart")); return; }
       const lang = I18N.getLang();
-      const outOfStock = cart.filter((i) => getStock(i.id) === 0);
-      const overStock  = cart.filter((i) => getStock(i.id) > 0 && i.qty > getStock(i.id));
+      const stockId = (i) => {
+        if (i.productId != null) return Number(i.productId);
+        const n = Number(i.id);
+        if (!isNaN(n)) return n;
+        return Number(String(i.id).split("_")[0]); // handle "3_box" style ids
+      };
+      const outOfStock = cart.filter((i) => getStock(stockId(i)) === 0);
+      const overStock  = cart.filter((i) => getStock(stockId(i)) > 0 && i.qty > getStock(stockId(i)));
       if (outOfStock.length > 0 || overStock.length > 0) {
         let msg = lang === 'en'
           ? "Some items in your cart are no longer available:\n\n"
@@ -402,8 +522,8 @@
         });
         overStock.forEach((i) => {
           msg += lang === 'en'
-            ? `• ${i.nameEn || i.name} — Only ${getStock(i.id)} available\n`
-            : `• ${i.name} — المتوفر فقط ${getStock(i.id)}\n`;
+            ? `• ${i.nameEn || i.name} — Only ${getStock(stockId(i))} available\n`
+            : `• ${i.name} — المتوفر فقط ${getStock(stockId(i))}\n`;
         });
         msg += lang === 'en'
           ? "\nPlease update your cart before placing the order."
@@ -450,10 +570,14 @@
         const contentsArr = lang === 'en' ? product.contentsEn : product.contents;
         const contentsHTML = contentsArr && contentsArr.length ? `
           <div class="package-contents">
-            <div class="contents-title">🎁 ${lang === 'en' ? 'Package Contents:' : 'محتويات الصندوق:'}</div>
+            <div class="contents-title">🎁 ${lang === 'en' ? 'Full Package Contents:' : 'محتويات الباقة الكاملة:'}</div>
             <ul class="contents-list">
+              <li>✔ ${lang === 'en' ? 'The box with motivational cards' : 'الصندوق مع بطاقات تحفيزية'}</li>
               ${contentsArr.map((c) => `<li>✔ ${c}</li>`).join("")}
             </ul>
+            <div style="margin-top:10px;font-size:.85rem;color:var(--muted);">
+              ${lang === 'en' ? '📦 Box only: includes the box + motivational cards.' : '📦 الصندوق فقط: يتضمن الصندوق + البطاقات التحفيزية.'}
+            </div>
           </div>` : '';
 
         content.innerHTML = `
@@ -520,19 +644,21 @@
           const qty = Number(document.getElementById("detailQty").textContent);
           if (hasVariants && selectedVariantIndex !== null) {
             const v = product.variants[selectedVariantIndex];
+            const cartId = `${product.id}_${v.key}`;
             const variantProduct = {
               ...product,
-              id: product.id,
-              // store variant info in cart item
+              id: cartId,
+              productId: product.id,
               name: `${product.name} — ${v.label}`,
               nameEn: `${product.nameEn} — ${v.labelEn}`,
               price: v.price,
               variantKey: v.key,
             };
-            const existing = cart.find((i) => i.id === product.id && i.variantKey === v.key);
+            const existing = cart.find((i) => i.id === cartId);
             const currentInCart = existing ? existing.qty : 0;
             const available = getStock(product.id);
-            if (currentInCart + qty > available) {
+            const allVariantsInCart = cart.filter((i) => i.productId === product.id).reduce((s, i) => s + i.qty, 0);
+            if (allVariantsInCart + qty > available) {
               showToast(lang === 'en' ? `Only ${available} in stock!` : `الكمية المتوفرة ${available} فقط!`);
               return;
             }
@@ -555,6 +681,13 @@
       renderPage();
       updateCartUI();
     })();
+
+    document.addEventListener("visibilitychange", async () => {
+      if (document.visibilityState === "visible") {
+        await loadStock();
+        renderPage();
+      }
+    });
   </script>
 </body>
 </html>

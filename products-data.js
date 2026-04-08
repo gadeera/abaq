@@ -53,7 +53,7 @@ const products = [
     price: 120,
     stock: 20,
     emoji: "☕",
-    image: "images/beyourself-box .jpeg",
+    image: "images/beyourself-box.jpeg",
     variants: [
       { key: "box",     label: "الصندوق فقط",      labelEn: "Box Only",      price: 70  },
       { key: "package", label: "الباقة الكاملة",    labelEn: "Full Package",  price: 120 },
@@ -71,7 +71,7 @@ const products = [
       "A unique car hanging accessory",
     ],
     images: [
-      "images/beyourself-box .jpeg",
+      "images/beyourself-box.jpeg",
       "images/be-yourself-box/WhatsApp Image 2026-04-02 at 14.46.43.jpeg",
       "images/be-yourself-box/WhatsApp Image 2026-04-02 at 14.46.44.jpeg",
       "images/be-yourself-box/WhatsApp Image 2026-04-02 at 14.46.45.jpeg",

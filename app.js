@@ -1,67 +1,5 @@
 // products array is loaded from products-data.js
-
-// ── CITIES & SHIPPING ────────────────────────────────────
-const CITIES_FROM_NAZARETH = [
-  { ar: "الناصرة",        en: "Nazareth",         km: 0   },
-  { ar: "نوف הגליל",      en: "Nof HaGalil",      km: 3   },
-  { ar: "كفر كنا",        en: "Kafr Kanna",        km: 8   },
-  { ar: "طرعان",          en: "Tur'an",            km: 10  },
-  { ar: "كفر مندا",       en: "Kafr Manda",        km: 12  },
-  { ar: "إبلين",          en: "Ibillin",           km: 15  },
-  { ar: "عرابة",          en: "Arraba",            km: 15  },
-  { ar: "عفولة",          en: "Afula",             km: 16  },
-  { ar: "سخنين",          en: "Sakhnin",           km: 20  },
-  { ar: "شفاعمرو",        en: "Shefa-Amr",         km: 20  },
-  { ar: "رمة",            en: "Rame",              km: 20  },
-  { ar: "مجد الكروم",     en: "Majd al-Krum",      km: 20  },
-  { ar: "دير حنا",        en: "Deir Hanna",        km: 22  },
-  { ar: "المغار",         en: "Maghar",            km: 22  },
-  { ar: "كبول",           en: "Kabul",             km: 22  },
-  { ar: "أم الفحم",       en: "Umm al-Fahm",       km: 25  },
-  { ar: "تمرة",           en: "Tamra",             km: 25  },
-  { ar: "كرميئيل",        en: "Karmiel",           km: 26  },
-  { ar: "حيفا",           en: "Haifa",             km: 28  },
-  { ar: "طبريا",          en: "Tiberias",          km: 30  },
-  { ar: "كفر ياسيف",      en: "Kafr Yasif",        km: 32  },
-  { ar: "يركا",           en: "Yarka",             km: 33  },
-  { ar: "عرعرة",          en: "Ar'ara",            km: 35  },
-  { ar: "عكا",            en: "Acre",              km: 36  },
-  { ar: "باقة الغربية",   en: "Baka al-Gharbiyye", km: 38  },
-  { ar: "أبو سنان",       en: "Abu Snan",          km: 38  },
-  { ar: "نهاريا",         en: "Nahariya",          km: 50  },
-  { ar: "جسر الزرقاء",    en: "Jisr az-Zarqa",     km: 50  },
-  { ar: "حدرة",           en: "Hadera",            km: 55  },
-  { ar: "الطيبة",         en: "Taibeh",            km: 55  },
-  { ar: "الطيرة",         en: "Tire",              km: 60  },
-  { ar: "نتانيا",         en: "Netanya",           km: 62  },
-  { ar: "جلجولية",        en: "Jaljulia",          km: 65  },
-  { ar: "كفر قاسم",       en: "Kafr Qasim",        km: 67  },
-  { ar: "كفار سابا",      en: "Kfar Saba",         km: 72  },
-  { ar: "رعنانا",         en: "Ra'anana",          km: 77  },
-  { ar: "بتاح تكفا",      en: "Petah Tikva",       km: 82  },
-  { ar: "هرتسليا",        en: "Herzliya",          km: 84  },
-  { ar: "اللد",           en: "Lod",               km: 88  },
-  { ar: "تل أبيب",        en: "Tel Aviv",          km: 90  },
-  { ar: "رمله",           en: "Ramla",             km: 90  },
-  { ar: "ريشون لتسيون",   en: "Rishon LeZion",     km: 95  },
-  { ar: "رحوفوت",         en: "Rehovot",           km: 100 },
-  { ar: "القدس",          en: "Jerusalem",         km: 118 },
-  { ar: "أشدود",          en: "Ashdod",            km: 132 },
-  { ar: "أشكلون",         en: "Ashkelon",          km: 148 },
-  { ar: "رهط",            en: "Rahat",             km: 162 },
-  { ar: "بئر السبع",      en: "Beer Sheva",        km: 168 },
-  { ar: "ديمونا",         en: "Dimona",            km: 195 },
-  { ar: "ميتسبه رمون",    en: "Mitzpe Ramon",      km: 232 },
-  { ar: "إيلات",          en: "Eilat",             km: 345 },
-].sort((a, b) => a.km - b.km);
-
-function getShippingFee(km) {
-  if (km <= 20)  return 15;
-  if (km <= 50)  return 20;
-  if (km <= 100) return 30;
-  if (km <= 200) return 40;
-  return 50;
-}
+// CITIES_FROM_NAZARETH and getShippingFee are loaded from shipping-data.js
 
 // ── STOCK (Supabase) ──────────────────────────────────────
 let stockCache = {};
@@ -168,21 +106,30 @@ function addToCart(id, qty = 1) {
 }
 
 function removeFromCart(id) {
-  cart = cart.filter((i) => i.id !== id);
+  cart = cart.filter((i) => String(i.id) !== String(id));
   saveCart();
   updateCartUI();
 }
 
 function changeQty(id, delta) {
-  const item = cart.find((i) => i.id === id);
+  const item = cart.find((i) => String(i.id) === String(id));
   if (!item) return;
   const newQty = item.qty + delta;
   if (newQty <= 0) { removeFromCart(id); return; }
-  if (newQty > getStock(id)) {
-    showToast(I18N.getLang() === 'en' ? `Only ${getStock(id)} in stock!` : `الكمية المتوفرة ${getStock(id)} فقط!`);
+  const rawId = item.productId != null ? item.productId : item.id;
+  const stockId = !isNaN(Number(rawId)) ? Number(rawId) : Number(String(rawId).split("_")[0]);
+  const available = getStock(stockId);
+  if (available > 0 && newQty > available) {
+    showToast(I18N.getLang() === 'en' ? `Only ${available} in stock!` : `الكمية المتوفرة ${available} فقط!`);
     return;
   }
   item.qty = newQty;
+  saveCart();
+  updateCartUI();
+}
+
+function removeFromCartById(id) {
+  cart = cart.filter((i) => String(i.id) !== String(id));
   saveCart();
   updateCartUI();
 }
@@ -204,16 +151,25 @@ function updateCartUI() {
         (item) => `
       <div class="cart-item">
         <div class="cart-item-emoji">
-          ${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:2rem;height:2rem;object-fit:cover;border-radius:6px;" />` : item.emoji}
+          ${item.image ? `<img src="${item.image}" alt="" style="width:2.4rem;height:2.4rem;object-fit:cover;border-radius:6px;flex-shrink:0;" />` : item.emoji}
         </div>
         <div class="cart-item-info">
-          <div class="cart-item-name">${I18N.getLang() === 'en' ? (item.nameEn || item.name) : item.name}</div>
-          <div class="cart-item-price">₪${(item.price * item.qty).toFixed(2)}</div>
+          <div class="cart-item-name" style="font-size:.85rem;line-height:1.4;">${
+            (() => {
+              const fullName = I18N.getLang() === 'en' ? (item.nameEn || item.name) : item.name;
+              const parts = fullName.split(' — ');
+              return parts.length > 1
+                ? `${parts[0]}<br/><span style="color:var(--muted);font-size:.78rem;">${parts[1]}</span>`
+                : fullName;
+            })()
+          }</div>
+          <div class="cart-item-price">₪${(Number(item.price) * Number(item.qty)).toFixed(2)}</div>
         </div>
         <div class="cart-item-qty">
           <button class="qty-btn" data-id="${item.id}" data-delta="-1">−</button>
           <span class="qty-val">${item.qty}</span>
           <button class="qty-btn" data-id="${item.id}" data-delta="1">+</button>
+          <button class="remove-item-btn" data-id="${item.id}" title="إزالة">🗑</button>
         </div>
       </div>`
       )
@@ -221,15 +177,43 @@ function updateCartUI() {
 
     itemsEl.querySelectorAll(".qty-btn").forEach((btn) => {
       btn.addEventListener("click", () =>
-        changeQty(Number(btn.dataset.id), Number(btn.dataset.delta))
+        changeQty(btn.dataset.id, Number(btn.dataset.delta))
       );
+    });
+    itemsEl.querySelectorAll(".remove-item-btn").forEach((btn) => {
+      btn.addEventListener("click", () => removeFromCart(btn.dataset.id));
     });
   }
 
-  const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotal = cart.reduce((sum, i) => sum + Number(i.price) * Number(i.qty), 0);
   document.getElementById("cartSubtotal").textContent = `₪${subtotal.toFixed(2)}`;
   document.getElementById("cartTotal").textContent = `₪${subtotal.toFixed(2)}`;
+  checkGiftPopup();
 }
+
+// ── GIFT POPUP ────────────────────────────────────────────
+const GIFT_THRESHOLD = 500;
+let giftShown = false;
+
+function checkGiftPopup() {
+  const subtotal = cart.reduce((sum, i) => sum + Number(i.price) * Number(i.qty), 0);
+  if (!giftShown && subtotal >= GIFT_THRESHOLD) {
+    giftShown = true;
+    document.getElementById("giftPopup").classList.add("open");
+    document.getElementById("giftOverlay").classList.add("open");
+    I18N.apply();
+  }
+  if (subtotal < GIFT_THRESHOLD) giftShown = false;
+}
+
+function closeGiftPopup() {
+  document.getElementById("giftPopup").classList.remove("open");
+  document.getElementById("giftOverlay").classList.remove("open");
+}
+
+document.getElementById("closeGift").addEventListener("click", closeGiftPopup);
+document.getElementById("closeGiftBtn").addEventListener("click", closeGiftPopup);
+document.getElementById("giftOverlay").addEventListener("click", closeGiftPopup);
 
 // ── SIDEBAR OPEN/CLOSE ───────────────────────────────────
 function openCart() {
@@ -392,19 +376,25 @@ function populateCitySelect() {
 
 function updateOrderTotal() {
   const isPickup = document.getElementById("methodPickup").checked;
-  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const cityKm = isPickup ? null : Number(document.getElementById("customerCity").value) || null;
-  const shipping = isPickup ? 0 : (cityKm !== null ? getShippingFee(cityKm) : null);
-  const total = shipping !== null ? subtotal + shipping : subtotal;
+  const subtotal = cart.reduce((s, i) => s + Number(i.price) * Number(i.qty), 0);
+  const citySelect = document.getElementById("customerCity");
+  const citySelected = !isPickup && citySelect.value !== "";
+  const cityKm = citySelected ? Number(citySelect.value) : null;
+  const shipping = isPickup ? 0 : (citySelected ? getShippingFee(cityKm) : 0);
+  const total = subtotal + shipping;
 
   document.getElementById("orderTotalDisplay").textContent = `₪${total.toFixed(2)}`;
 
   const estimateEl = document.getElementById("shippingEstimate");
-  if (!isPickup && cityKm !== null) {
+  if (isPickup) {
+    estimateEl.textContent = `🏪 ${I18N.getLang() === 'en' ? 'Pickup: Free' : 'الاستلام: مجاني'}`;
+    estimateEl.style.display = "block";
+  } else if (cityKm !== null) {
     estimateEl.textContent = `🚚 ${I18N.t("order.shippingFee").replace("{fee}", shipping)}`;
     estimateEl.style.display = "block";
   } else {
-    estimateEl.style.display = "none";
+    estimateEl.textContent = `📍 ${I18N.getLang() === 'en' ? 'Select a city to calculate shipping' : 'اختر مدينة لحساب الشحن'}`;
+    estimateEl.style.display = "block";
   }
 }
 
@@ -445,7 +435,7 @@ document.getElementById("orderForm").addEventListener("submit", async (e) => {
   const phone    = document.getElementById("customerPhone").value.trim();
   const notes    = document.getElementById("customerNotes").value.trim();
   const isPickup = document.getElementById("methodPickup").checked;
-  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const subtotal = cart.reduce((s, i) => s + Number(i.price) * Number(i.qty), 0);
 
   let shippingFee = 0;
   let locationLine = "";
@@ -453,15 +443,16 @@ document.getElementById("orderForm").addEventListener("submit", async (e) => {
   if (isPickup) {
     locationLine = `📍 الاستلام: من المتجر في الناصرة`;
   } else {
-    const cityKm   = Number(document.getElementById("customerCity").value);
-    const cityName = document.getElementById("customerCity").selectedOptions[0]?.text.split(" (~")[0] || "";
+    const citySel  = document.getElementById("customerCity");
+    const cityKm   = citySel.value !== "" ? Number(citySel.value) : 0;
+    const cityName = citySel.selectedOptions[0]?.text || "";
     const address  = document.getElementById("customerAddress").value.trim();
-    shippingFee    = getShippingFee(cityKm);
+    shippingFee    = citySel.value !== "" ? getShippingFee(cityKm) : 0;
     locationLine   = `📍 المدينة: ${cityName}\n🏠 العنوان: ${address}`;
   }
 
   const total = subtotal + shippingFee;
-  const itemsList = cart.map((i) => `• ${i.name} x${i.qty} — ₪${(i.price * i.qty).toFixed(2)}`).join("\n");
+  const itemsList = cart.map((i) => `• ${i.name} x${Number(i.qty)} — ₪${(Number(i.price) * Number(i.qty)).toFixed(2)}`).join("\n");
 
   const message =
     `طلب جديد من متجر عبق 🛍️\n` +
@@ -481,7 +472,11 @@ document.getElementById("orderForm").addEventListener("submit", async (e) => {
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
 
-  for (const item of cart) { await deductStock(item.id, item.qty); }
+  for (const item of cart) {
+    const rawId = item.productId != null ? item.productId : item.id;
+  const stockId = !isNaN(Number(rawId)) ? Number(rawId) : Number(String(rawId).split("_")[0]);
+    await deductStock(stockId, item.qty);
+  }
   cart = [];
   saveCart();
   updateCartUI();
@@ -497,8 +492,14 @@ document.getElementById("checkoutBtn").addEventListener("click", () => {
     showToast(I18N.t("toast.emptyCart"));
     return;
   }
-  const outOfStock = cart.filter((i) => getStock(i.id) === 0);
-  const overStock   = cart.filter((i) => getStock(i.id) > 0 && i.qty > getStock(i.id));
+  const stockId = (i) => {
+    if (i.productId != null) return Number(i.productId);
+    const n = Number(i.id);
+    if (!isNaN(n)) return n;
+    return Number(String(i.id).split("_")[0]); // handle "3_box" style ids
+  };
+  const outOfStock = cart.filter((i) => getStock(stockId(i)) === 0);
+  const overStock   = cart.filter((i) => getStock(stockId(i)) > 0 && i.qty > getStock(stockId(i)));
   if (outOfStock.length > 0 || overStock.length > 0) {
     const lang = I18N.getLang();
     let msg = lang === 'en'
@@ -511,8 +512,8 @@ document.getElementById("checkoutBtn").addEventListener("click", () => {
     });
     overStock.forEach((i) => {
       msg += lang === 'en'
-        ? `• ${i.nameEn || i.name} — Only ${getStock(i.id)} available\n`
-        : `• ${i.name} — المتوفر فقط ${getStock(i.id)}\n`;
+        ? `• ${i.nameEn || i.name} — Only ${getStock(stockId(i))} available\n`
+        : `• ${i.name} — المتوفر فقط ${getStock(stockId(i))}\n`;
     });
     msg += lang === 'en'
       ? "\nPlease update your cart before placing the order."
@@ -538,3 +539,11 @@ function showToast(msg) {
   await loadStock();
   I18N.init();
 })();
+
+// Refresh stock whenever the user returns to the tab
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState === "visible") {
+    await loadStock();
+    renderProducts();
+  }
+});

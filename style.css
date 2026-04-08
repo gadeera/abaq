@@ -112,8 +112,8 @@ nav a:hover { color: #fff; }
 
 /* ── HERO ────────────────────────────────────────────── */
 .hero {
-  background: linear-gradient(rgba(20,10,40,0.72), rgba(20,10,40,0.72)),
-              url('images/ceramic-plates-set.jpeg') center/300px repeat;
+  background: linear-gradient(rgba(20,10,40,0.62), rgba(20,10,40,0.62)),
+              url('images/cover.jpeg') center/cover no-repeat;
   color: #fff;
   min-height: 320px;
   display: flex;
@@ -390,6 +390,17 @@ footer {
 
 .qty-val { font-weight: 600; min-width: 20px; text-align: center; }
 
+.remove-item-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: .5;
+  padding: 2px 4px;
+  transition: opacity .2s;
+}
+.remove-item-btn:hover { opacity: 1; }
+
 .cart-footer {
   padding: 24px;
   border-top: 1px solid #eee;
@@ -569,6 +580,70 @@ footer {
   font-size: .9rem;
   color: var(--muted);
   line-height: 1.6;
+}
+
+/* ── GIFT POPUP ──────────────────────────────────────── */
+.gift-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 400;
+}
+.gift-overlay.open { display: block; }
+
+.gift-popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, 92vw);
+  background: #fff;
+  border-radius: var(--radius);
+  z-index: 401;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  flex-direction: column;
+}
+.gift-popup.open { display: flex; }
+
+.gift-popup-img img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.gift-popup-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.gift-badge {
+  display: inline-block;
+  background: #fff0f3;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: .85rem;
+  padding: 4px 14px;
+  border-radius: 20px;
+  align-self: center;
+}
+
+.gift-popup-body h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--brand);
+}
+
+.gift-popup-body p {
+  font-size: .9rem;
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 /* ── TOAST ───────────────────────────────────────────── */

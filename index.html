@@ -77,6 +77,21 @@
     </div>
   </aside>
 
+  <!-- GIFT POPUP -->
+  <div class="gift-overlay" id="giftOverlay"></div>
+  <div class="gift-popup" id="giftPopup">
+    <button class="close-btn" id="closeGift" style="position:absolute;top:12px;left:12px;">&times;</button>
+    <div class="gift-popup-img">
+      <img src="images/bookmark-gift.jpeg" alt="هدية مجانية" />
+    </div>
+    <div class="gift-popup-body">
+      <div class="gift-badge">🎁 هدية مجانية</div>
+      <h3 data-i18n="gift.title">إشارة مرجعية خشبية مجانية!</h3>
+      <p data-i18n="gift.desc">طلبك تجاوز ₪500 — ستحصل على إشارة مرجعية خشبية محفورة بعبارة ملهمة هدية منا 🎉</p>
+      <button class="btn-primary" id="closeGiftBtn" data-i18n="gift.cta">رائع، شكراً!</button>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
@@ -142,6 +157,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-client.js"></script>
   <script src="products-data.js"></script>
+  <script src="shipping-data.js"></script>
   <script src="translations.js"></script>
   <script src="i18n.js"></script>
   <script src="app.js"></script>
